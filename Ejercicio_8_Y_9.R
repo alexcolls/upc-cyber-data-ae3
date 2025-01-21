@@ -5,6 +5,7 @@ if (!require("dplyr")) install.packages("dplyr")
 if (!require("mltools")) install.packages("mltools")
 if (!require("data.table")) install.packages("data.table")
 if (!require("ggplot2")) install.packages("ggplot2")
+if (!require("GGally")) install.packages("GGally")
 
 library(readr)
 library(stringr)
@@ -12,6 +13,7 @@ library(dplyr)
 library(mltools)
 library(data.table)
 library(ggplot2)
+library(GGally)
 
 # Cargar los datos
 raw_data <- read_lines("epa-http.csv")
@@ -71,7 +73,8 @@ for (i in seq_along(k_values)) {
 pca_data <- prcomp(data_numeric, scale. = TRUE)
 plot_data <- as.data.frame(pca_data$x[, 1:2])
 
-# Crear gráficos para cada k
+# Crear una lista de gráficos para cada valor de k
+plot_list <- list()
 for (i in seq_along(k_values)) {
   plot_data <- plot_data %>%
     mutate(Cluster = factor(k_results[[i]]$cluster))
@@ -79,8 +82,20 @@ for (i in seq_along(k_values)) {
   p <- ggplot(plot_data, aes(x = PC1, y = PC2, color = Cluster)) +
     geom_point() +
     ggtitle(paste("Clustering con k =", k_values[i])) +
-    theme_minimal()
+    theme_minimal() +
+    theme(legend.position = "none")  # Ocultar leyenda en cada gráfico individual
   
-  print(p)  # Usar print() explícito dentro del bucle
+  plot_list[[i]] <- p  # Guardar cada gráfico en la lista
 }
-x
+
+# Disposición en dos columnas para los gráficos de K-means
+gridExtra::grid.arrange(grobs = plot_list, ncol = 2)
+
+# Visualización de las relaciones entre las variables con ggpairs
+ggpairs(data_numeric, 
+        aes(color = factor(k_results[[2]]$cluster)), 
+        title = "Relaciones entre variables (K-means clustering con k = 3)", 
+        upper = list(continuous = wrap("cor", size = 5)),
+        lower = list(continuous = "points")) +
+  theme_minimal(base_size = 16) +  # Ajuste para hacer los gráficos más legibles
+  theme(legend.position = "bottom")  # Colocar leyenda en la parte inferior
