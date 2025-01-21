@@ -58,28 +58,28 @@ for (col in names(data_numeric)) {
 
 # Aplicar k-means con diferentes valores de k
 set.seed(42)
-k2 <- kmeans(data_numeric, centers = 2, nstart = 25)
-k3 <- kmeans(data_numeric, centers = 3, nstart = 25)
+k_values <- c(2, 3, 4, 5)  # Valores de k a probar
+k_results <- lapply(k_values, function(k) kmeans(data_numeric, centers = k, nstart = 25))
 
-# Resultados
-print("Resultados con k = 2")
-print(k2$centers)
-print("Resultados con k = 3")
-print(k3$centers)
+# Mostrar los centros de los clústeres para cada valor de k
+for (i in seq_along(k_values)) {
+  cat(paste("\nResultados con k =", k_values[i], "\n"))
+  print(k_results[[i]]$centers)
+}
 
-# Visualización con k = 2 y k = 3 (seleccionar las dos primeras columnas principales para simplicidad)
+# Visualización con PCA para las dos primeras componentes principales
 pca_data <- prcomp(data_numeric, scale. = TRUE)
-plot_data <- as.data.frame(pca_data$x[, 1:2]) %>%
-  mutate(Cluster_k2 = factor(k2$cluster), Cluster_k3 = factor(k3$cluster))
+plot_data <- as.data.frame(pca_data$x[, 1:2])
 
-# Visualización
-ggplot(plot_data, aes(x = PC1, y = PC2, color = Cluster_k2)) +
-  geom_point() +
-  ggtitle("Clustering con k = 2") +
-  theme_minimal()
-
-ggplot(plot_data, aes(x = PC1, y = PC2, color = Cluster_k3)) +
-  geom_point() +
-  ggtitle("Clustering con k = 3") +
-  theme_minimal()
-
+# Crear gráficos para cada k
+for (i in seq_along(k_values)) {
+  plot_data <- plot_data %>%
+    mutate(Cluster = factor(k_results[[i]]$cluster))
+  
+  p <- ggplot(plot_data, aes(x = PC1, y = PC2, color = Cluster)) +
+    geom_point() +
+    ggtitle(paste("Clustering con k =", k_values[i])) +
+    theme_minimal()
+  
+  print(p)  # Usar print() explícito dentro del bucle
+}
