@@ -1,0 +1,187 @@
+---
+title: "Practica_1"
+output: html_document
+date: "2024-12-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load-data}
+library(readr)
+```
+
+# Parte 1: Clasificación de Preguntas
+
+## Pregunta 1: Clasificación y Razón
+
+1.  **Cuántos vehículos tenemos por tipo**
+    -   **Clasificación:** Descriptiva
+    -   **Razón:** Este análisis resume el conjunto de datos mostrando características básicas como frecuencias o conteos.
+2.  **Preferencias en cuanto a género literario según rango de edad**
+    -   **Clasificación:** Exploratoria
+    -   **Razón:** Busca identificar patrones o relaciones entre variables (género literario y rango de edad).
+3.  **Determinación de problemas futuros con mensajes de una red**
+    -   **Clasificación:** Predictiva
+    -   **Razón:** El objetivo es prever eventos futuros basándose en patrones históricos.
+4.  **Agrupación de usuarios por historial**
+    -   **Clasificación:** Inferencial
+    -   **Razón:** Implica generalizar conclusiones sobre la agrupación de usuarios.
+
+# Parte 2: Análisis de Conexiones TCP
+
+1.  **Obtención de datos**
+    -   Extraer logs de conexiones TCP que incluyan origen, destino, puertos, timestamps y protocolos.
+2.  **Tratamiento de datos**
+    -   Limpieza: Identificar y eliminar datos duplicados.
+    -   Filtrado: Seleccionar conexiones web (puertos 80 o 443).
+3.  **Preguntas clave**
+    -   ¿Qué máquinas han realizado más conexiones externas?
+    -   ¿Qué direcciones IP destino son más frecuentes?
+4.  **Análisis visual**
+    -   Gráficos de frecuencia de IPs.
+    -   Diagramas de dispersión para analizar patrones temporales.
+5.  **Comunicación de resultados**
+    -   Elaborar gráficos claros y tablas.
+    -   Recomendar estrategias como restricciones de puertos.
+
+# Parte 3: Introducción a R
+
+## Cargar el dataset
+
+```{r load-data}
+if (!require("readr")) install.packages("readr")
+if (!require("stringr")) install.packages("stringr")
+if (!require("dplyr")) install.packages("dplyr")
+
+# Cargar los paquetes necesarios
+library(readr)   # Para read_lines
+library(stringr) # Para str_match
+library(dplyr)
+
+# Cargar los datos crudos como líneas de texto
+raw_data <- read_lines("epa-http.csv")
+
+# Dividir las columnas usando una expresión regular
+epa_http <- raw_data %>%
+  str_match('^(\\S+) \\[(\\d+:\\d+:\\d+:\\d+)\\] "([A-Z]+)\\s+([^"]+)\\s+(HTTP/\\d\\.\\d)" (\\d{3}) (\\d+|-)') %>%
+  as.data.frame() %>%
+  select(-V1) %>%
+  setNames(c("host", "timestamp", "method", "resource", "protocol", "status", "bytes"))
+
+# Limpiar y convertir las columnas
+epa_http <- epa_http %>%
+  mutate(
+    timestamp = as.POSIXct(timestamp, format = "%d:%H:%M:%S", tz = "UTC"), # Convertir timestamp
+    status = as.integer(status), # Convertir 'status' a entero
+    bytes = na_if(bytes, "-"),   # Reemplazar '-' con NA
+    bytes = as.integer(bytes)    # Convertir 'bytes' a entero
+  )
+
+# Mostrar las primeras filas
+print(head(epa_http))
+```
+
+## Pregunta 1: Dimensiones del dataset
+
+```{r dimensions}
+dim(epa_http)
+```
+
+## Valor medio de la columna Bytes
+
+```{r mean-bytes}
+mean(epa_http$bytes, na.rm = TRUE)
+```
+
+## Pregunta 2: IPs educativas (.edu)
+
+```{r edu-ips}
+edu_ips <- grepl("\\.edu$", epa_http$host)
+sum(edu_ips)
+```
+
+## Pregunta 3: Hora de mayor volumen de peticiones GET
+
+Para la relización de este apartado se identifica primero la primera y última hora del intervalo horario para saber la ventana de tiempo que estamos mirando. Como se podra ver, la ventana es 24 horas y por eso, en el momento de calcular la hora de maximas peticiones podemos prescindir del día.
+
+```{r get}
+# Extraer la parte de día:hora:minuto:segundo de la columna timestamp
+epa_http$fecha_hora <- sub("\\[(\\d{2}:\\d{2}:\\d{2}:\\d{2})\\]", "\\1", epa_http$timestamp)
+
+# Filtrar las peticiones para que solo incluyan las que corresponden a los días 29 y 30
+peticiones_29_30 <- subset(epa_http, grepl("^29|30", fecha_hora))
+
+# Ordenar por hora
+peticiones_ordenadas <- peticiones_29_30[order(peticiones_29_30$fecha_hora), ]
+
+# Obtener la primera y última hora del intervalo
+primera_hora <- head(peticiones_ordenadas$fecha_hora, 1)
+ultima_hora <- tail(peticiones_ordenadas$fecha_hora, 1)
+
+# Mostrar los resultados
+print(paste("Primera hora:", primera_hora))
+print(paste("Última hora:", ultima_hora))
+
+# Extraer la hora de la columna timestamp
+epa_http$hora_minuto_segundo <- sub(".*:(\\d{2}:\\d{2}:\\d{2})\\]", "\\1", epa_http$timestamp)
+
+epa_http$method <- gsub('^"|"$', '', epa_http$method)
+
+# Filtrar solo las peticiones GET
+peticiones_get <- subset(epa_http, method == "GET")
+
+# Contar cuántas veces ocurre cada hora:minuto:segundo
+peticiones_por_hora <- table(peticiones_get$hora_minuto_segundo)
+
+# Encontrar la hora con el mayor volumen de peticiones
+hora_maxima <- names(peticiones_por_hora)[which.max(peticiones_por_hora)]
+
+# Mostrar la hora con mayor volumen de peticiones
+print(hora_maxima)
+
+```
+
+## Pregunta 4: Bytes transmitidos por .edu en descargas de .txt
+
+```{r edu-bytes}
+# Filtrar por dominios .edu en host y peticiones de archivos .txt en resource
+peticiones_edu_txt <- subset(epa_http, grepl("\\.edu", host) & grepl("\\.txt$", resource))
+
+# Mostrar una muestra de los resultados (columnas host y bytes)
+muestra_peticiones_edu_txt <- peticiones_edu_txt[, c("host", "bytes")]
+head(muestra_peticiones_edu_txt)
+
+# Sumar los bytes transmitidos
+total_bytes_edu_txt <- sum(peticiones_edu_txt$bytes)
+
+# Mostrar el total de bytes transmitidos
+total_bytes_edu_txt
+```
+
+## Pregunta 5: Peticiones hacia '/'
+
+```{r url}
+# Filtrar las peticiones que buscan directamente la URL "/"
+peticiones_raiz <- subset(epa_http, resource == "/")
+
+# Ver cuántas peticiones hay que buscan la URL "/"
+nrow(peticiones_raiz)
+```
+
+## Pregunta 6: Peticiones con protocolo distinto de HTTP/0.2
+
+```{r http}
+# Eliminar las comillas finales del protocolo en la columna protocol
+epa_http$protocol <- sub('"$', '', epa_http$protocol)
+
+# Filtrar las peticiones que no tienen como protocolo "HTTP/0.2"
+peticiones_no_http_0_2 <- subset(epa_http, protocol != "HTTP/0.2")
+
+# Ver el número de peticiones que no tienen el protocolo "HTTP/0.2"
+numero_peticiones_no_http_0_2 <- nrow(peticiones_no_http_0_2)
+
+# Mostrar el resultado
+print(numero_peticiones_no_http_0_2)
+```

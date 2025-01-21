@@ -1,0 +1,184 @@
+---
+title: "Practica_1"
+output: html_document
+date: "2024-12-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Parte 1: Clasificación de Preguntas
+
+## Pregunta 1: Clasificación y Razón
+
+1.  **Cuántos vehículos tenemos por tipo**
+    -   **Clasificación:** Descriptiva
+    -   **Razón:** Este análisis resume el conjunto de datos mostrando características básicas como frecuencias o conteos.
+2.  **Preferencias en cuanto a género literario según rango de edad**
+    -   **Clasificación:** Exploratoria
+    -   **Razón:** Busca identificar patrones o relaciones entre variables (género literario y rango de edad).
+3.  **Determinación de problemas futuros con mensajes de una red**
+    -   **Clasificación:** Predictiva
+    -   **Razón:** El objetivo es prever eventos futuros basándose en patrones históricos.
+4.  **Agrupación de usuarios por historial**
+    -   **Clasificación:** Inferencial
+    -   **Razón:** Implica generalizar conclusiones sobre la agrupación de usuarios.
+
+# Parte 2: Análisis de Conexiones TCP
+
+1.  **Obtención de datos**
+    -   Extraer logs de conexiones TCP que incluyan origen, destino, puertos, timestamps y protocolos.
+2.  **Tratamiento de datos**
+    -   Limpieza: Identificar y eliminar datos duplicados.
+    -   Filtrado: Seleccionar conexiones web (puertos 80 o 443).
+3.  **Preguntas clave**
+    -   ¿Qué máquinas han realizado más conexiones externas?
+    -   ¿Qué direcciones IP destino son más frecuentes?
+4.  **Análisis visual**
+    -   Gráficos de frecuencia de IPs.
+    -   Diagramas de dispersión para analizar patrones temporales.
+5.  **Comunicación de resultados**
+    -   Elaborar gráficos claros y tablas.
+    -   Recomendar estrategias como restricciones de puertos.
+
+# Parte 3: Introducción a R
+
+## Cargar el dataset
+
+```{r load-data}
+library(readr)
+library(dplyr)
+library(stringr)
+
+# Cargar los datos crudos como líneas de texto
+raw_data <- read_lines("epa-http.csv")
+
+# Dividir las columnas usando una expresión regular
+epa_http <- raw_data %>%
+  str_match('^(\\S+) \\[(\\d+:\\d+:\\d+:\\d+)\\] "([A-Z]+)\\s+([^"]+)\\s+(HTTP/\\d\\.\\d)" (\\d{3}) (\\d+|-)') %>%
+  as.data.frame() %>%
+  select(-V1) %>%
+  setNames(c("host", "timestamp", "method", "resource", "protocol", "status", "bytes"))
+
+# Limpiar y convertir las columnas
+epa_http <- epa_http %>%
+  mutate(
+    timestamp = as.POSIXct(timestamp, format = "%d:%H:%M:%S", tz = "UTC"), # Convertir timestamp
+    status = as.integer(status), # Convertir 'status' a entero
+    bytes = na_if(bytes, "-"),   # Reemplazar '-' con NA
+    bytes = as.integer(bytes)    # Convertir 'bytes' a entero
+  )
+
+# Mostrar las primeras filas
+print(head(epa_http))
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 1: Dimensiones del dataset
+
+```{r dimensions}
+# Obtener dimensiones del dataset
+n_filas <- nrow(epa_http)
+n_columnas <- ncol(epa_http)
+cat("El dataset tiene", n_filas, "filas y", n_columnas, "columnas.")
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 2: Valor medio de la columna Bytes
+
+```{r mean-bytes}
+# Calcular el valor medio de la columna Bytes, ignorando NAs
+valor_medio_bytes <- mean(epa_http$bytes, na.rm = TRUE)
+cat("El valor medio de la columna 'Bytes' es:", round(valor_medio_bytes, 2))
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 3: IPs educativas (.edu)
+
+```{r count-edu-ips}
+# Contar IPs que contienen ".edu" en la columna IP
+ips_edu <- epa_http %>% filter(str_detect(host, ".edu"))
+num_ips_edu <- nrow(ips_edu)
+cat("El número de IPs educativas (.edu) es:", num_ips_edu)
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 4: Hora con mayor volumen de peticiones GET
+
+```{r peak-get-requests}
+# Filtrar solo peticiones GET y extraer la hora del Timestamp
+epa_http <- epa_http %>% mutate(Hour = str_extract(timestamp, "[0-9]{2}"))
+get_requests <- epa_http %>% filter(method == "GET")
+peak_hour <- get_requests %>% count(Hour) %>% arrange(desc(n)) %>% slice(1)
+cat("La hora con mayor volumen de peticiones GET es:", peak_hour$Hour, "con", peak_hour$n, "peticiones.")
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 5: Bytes transmitidos por instituciones educativas (.edu) para ficheros .txt
+
+```{r edu-bytes-txt}
+# Filtrar instituciones educativas y peticiones de ficheros .txt
+bytes_txt_edu <- epa_http %>% 
+  filter(str_detect(host, ".edu"), str_detect(resource, "\\.txt$")) %>%
+  summarise(Total_Bytes = sum(bytes, na.rm = TRUE))
+cat("El total de bytes transmitidos en ficheros .txt por instituciones educativas (.edu) es:", bytes_txt_edu$Total_Bytes)
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 6: Peticiones con URL = "/"
+
+```{r root-url-requests}
+# Contar peticiones donde la URL es "/"
+root_requests <- epa_http %>% filter(resource == "/")
+num_root_requests <- nrow(root_requests)
+cat("El número de peticiones que buscan directamente la URL '/' es:", num_root_requests)
+```
+
+------------------------------------------------------------------------
+
+## Pregunta 7: Peticiones sin protocolo HTTP/0.2
+
+```{r not-http-0-2}
+# Contar peticiones donde el protocolo es HTTP/0.2
+http_02 <- epa_http %>% filter(protocol == "HTTP/0.2")
+num_not_http_02 <- nrow(epa_http) - nrow(http_02)
+cat("El número de peticiones que no tienen como protocolo 'HTTP/0.2' es:", num_not_http_02)
+```
+
+------------------------------------------------------------------------
+
+## Resumen de la Parte 3
+
+1.  **Dimensiones del dataset:**\
+    El dataset tiene `r n_filas` filas y `r n_columnas` columnas.
+
+2.  **Valor medio de la columna Bytes:**\
+    El valor medio de la columna `Bytes` es `r round(valor_medio_bytes, 2)`.
+
+3.  **IPs educativas (.edu):**\
+    El número de IPs educativas es `r num_ips_edu`.
+
+4.  **Hora con mayor volumen de peticiones GET:**\
+    La hora con más peticiones GET es `r peak_hour$Hour` con `r peak_hour$n` peticiones.
+
+5.  **Bytes transmitidos por ficheros .txt (.edu):**\
+    El total de bytes transmitidos es `r bytes_txt_edu$Total_Bytes`.
+
+6.  **Peticiones URL = "/":**\
+    El número de peticiones a la URL '/' es `r num_root_requests`.
+
+7.  **Peticiones sin protocolo HTTP/0.2:**\
+    El número de peticiones sin protocolo HTTP/0.2 es `r num_not_http_02`.
+
+------------------------------------------------------------------------
+
+## Conclusión
+
+En esta sección, hemos realizado un análisis detallado del archivo de registros HTTP, respondiendo a preguntas clave como dimensiones del dataset, estadísticas de bytes, IPs educativas, y peticiones específicas. Cada respuesta incluye el código necesario y una descripción clara del proceso seguido.
