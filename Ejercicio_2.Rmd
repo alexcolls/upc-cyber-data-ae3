@@ -34,3 +34,88 @@ Unas cuantas filas del dataset para ilustrar cómo están estructurados:
 - **Relevancia de los datos:** Este tipo de información es crucial para entender cómo los usuarios interactúan con un sitio web. Permite identificar patrones de tráfico, detectar errores frecuentes (como recursos no encontrados) y analizar el rendimiento del servidor.
 - **Limitaciones:** Los datos no incluyen información sensible como credenciales de usuario, pero podría haber información identificable en los nombres de host.
 
+## Descripción de los datos analizados
+
+Los datos utilizados en este análisis provienen de un conjunto de logs de acceso a un servidor web. A continuación, se describen las principales características de los datos:
+
+- **Fuente:** Logs del servidor web.
+- **Tipología:** Datos estructurados.
+- **Descripción de la información contenida:**
+  - **`status`:** Código de estado HTTP de la solicitud. Valores típicos incluyen:
+    - `200`: Solicitud exitosa.
+    - `227` o `228`: Estados menos comunes relacionados con el cliente o servidor.
+  - **`bytes`:** Número de bytes transferidos en respuesta a la solicitud.
+  - **`resource_length`:** Longitud del recurso solicitado (en unidades no especificadas, posiblemente en KB o líneas).
+
+### Valores típicos en los datos
+
+- **Códigos de estado (`status`)**: La mayoría de los códigos son `200`, lo que indica respuestas exitosas. Existen valores en torno a `227` y `228` que representan casos particulares.
+- **Bytes transferidos (`bytes`)**: Varían desde pequeños valores (alrededor de 2,000 bytes) hasta valores significativos en el rango de millones de bytes.
+- **Longitud del recurso (`resource_length`)**: Oscila entre 30 y 130 unidades.
+
+## Resultados del análisis de K-means
+
+### Resultados con k = 2
+```{r}
+data_k2 <- data.frame(
+  status = c(200.0000, 227.0542),
+  bytes = c(1480950.217, 4798.888),
+  resource_length = c(51.93333, 35.65123)
+)
+data_k2
+```
+
+### Resultados con k = 3
+```{r}
+data_k3 <- data.frame(
+  status = c(200.0000, 200.0000, 227.1236),
+  bytes = c(370692.323, 1578307.769, 3940.722),
+  resource_length = c(123.41538, 54.57692, 35.41122)
+)
+data_k3
+```
+
+### Resultados con k = 4
+```{r}
+data_k4 <- data.frame(
+  status = c(200.0000, 200.0000, 200.0000, 227.1378),
+  bytes = c(1183256.73, 2807039.36, 310800.62, 3852.71),
+  resource_length = c(35.38776, 125.63636, 130.41497, 35.35822)
+)
+data_k4
+```
+
+### Resultados con k = 5
+```{r}
+data_k5 <- data.frame(
+  status = c(200.000, 200.000, 200.000, 200.000, 228.293),
+  bytes = c(45046.075, 2807039.364, 339385.189, 1183256.735, 2168.504),
+  resource_length = c(75.00356, 125.63636, 129.22951, 35.38776, 33.70423)
+)
+data_k5
+```
+
+### Análisis de los resultados con k-means
+
+#### Interpretación de los resultados con k = 5
+El agrupamiento con k = 5 muestra cinco clusters bien diferenciados:
+
+1. **Cluster 1:** Representa recursos con longitud media y un tamaño de bytes relativamente bajo.
+2. **Cluster 2:** Corresponde a recursos con una longitud alta y el mayor tamaño de bytes transferidos.
+3. **Cluster 3:** Incluye recursos con longitud alta, pero con menor tamaño de bytes que el Cluster 2.
+4. **Cluster 4:** Agrupa recursos con longitud baja y un tamaño de bytes medio.
+5. **Cluster 5:** Representa casos extremos, con códigos de estado diferentes (228) y tamaños de bytes muy pequeños.
+
+### Comparación entre los diferentes valores de k
+
+Los resultados obtenidos para los diferentes valores de k indican que:
+
+- **k = 2:** Los clusters iniciales separan recursos exitosos de aquellos con códigos de estado menos comunes.
+- **k = 3:** Se identifican diferencias más claras en las longitudes de los recursos.
+- **k = 4:** Surge una mayor separación basada en el tamaño de los bytes transferidos.
+- **k = 5:** Se logra un agrupamiento más detallado, incluyendo un cluster que resalta casos atípicos.
+
+### Conclusión
+
+El valor óptimo de k depende del objetivo del análisis. En este caso, k = 5 proporciona un nivel de granularidad suficiente para diferenciar recursos por longitud, tamaño y código de estado. Esto puede ser útil para detectar patrones de uso o posibles anomalías en el sistema.
+

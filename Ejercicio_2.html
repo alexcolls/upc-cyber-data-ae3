@@ -508,6 +508,145 @@ sensible como credenciales de usuario, pero podría haber información
 identificable en los nombres de host.</li>
 </ul>
 </div>
+<div id="descripción-de-los-datos-analizados" class="section level2">
+<h2>Descripción de los datos analizados</h2>
+<p>Los datos utilizados en este análisis provienen de un conjunto de
+logs de acceso a un servidor web. A continuación, se describen las
+principales características de los datos:</p>
+<ul>
+<li><strong>Fuente:</strong> Logs del servidor web.</li>
+<li><strong>Tipología:</strong> Datos estructurados.</li>
+<li><strong>Descripción de la información contenida:</strong>
+<ul>
+<li><strong><code>status</code>:</strong> Código de estado HTTP de la
+solicitud. Valores típicos incluyen:
+<ul>
+<li><code>200</code>: Solicitud exitosa.</li>
+<li><code>227</code> o <code>228</code>: Estados menos comunes
+relacionados con el cliente o servidor.</li>
+</ul></li>
+<li><strong><code>bytes</code>:</strong> Número de bytes transferidos en
+respuesta a la solicitud.</li>
+<li><strong><code>resource_length</code>:</strong> Longitud del recurso
+solicitado (en unidades no especificadas, posiblemente en KB o
+líneas).</li>
+</ul></li>
+</ul>
+<div id="valores-típicos-en-los-datos" class="section level3">
+<h3>Valores típicos en los datos</h3>
+<ul>
+<li><strong>Códigos de estado (<code>status</code>)</strong>: La mayoría
+de los códigos son <code>200</code>, lo que indica respuestas exitosas.
+Existen valores en torno a <code>227</code> y <code>228</code> que
+representan casos particulares.</li>
+<li><strong>Bytes transferidos (<code>bytes</code>)</strong>: Varían
+desde pequeños valores (alrededor de 2,000 bytes) hasta valores
+significativos en el rango de millones de bytes.</li>
+<li><strong>Longitud del recurso
+(<code>resource_length</code>)</strong>: Oscila entre 30 y 130
+unidades.</li>
+</ul>
+</div>
+</div>
+<div id="resultados-del-análisis-de-k-means" class="section level2">
+<h2>Resultados del análisis de K-means</h2>
+<div id="resultados-con-k-2" class="section level3">
+<h3>Resultados con k = 2</h3>
+<pre class="r"><code>data_k2 &lt;- data.frame(
+  status = c(200.0000, 227.0542),
+  bytes = c(1480950.217, 4798.888),
+  resource_length = c(51.93333, 35.65123)
+)
+data_k2</code></pre>
+<pre><code>##     status       bytes resource_length
+## 1 200.0000 1480950.217        51.93333
+## 2 227.0542    4798.888        35.65123</code></pre>
+</div>
+<div id="resultados-con-k-3" class="section level3">
+<h3>Resultados con k = 3</h3>
+<pre class="r"><code>data_k3 &lt;- data.frame(
+  status = c(200.0000, 200.0000, 227.1236),
+  bytes = c(370692.323, 1578307.769, 3940.722),
+  resource_length = c(123.41538, 54.57692, 35.41122)
+)
+data_k3</code></pre>
+<pre><code>##     status       bytes resource_length
+## 1 200.0000  370692.323       123.41538
+## 2 200.0000 1578307.769        54.57692
+## 3 227.1236    3940.722        35.41122</code></pre>
+</div>
+<div id="resultados-con-k-4" class="section level3">
+<h3>Resultados con k = 4</h3>
+<pre class="r"><code>data_k4 &lt;- data.frame(
+  status = c(200.0000, 200.0000, 200.0000, 227.1378),
+  bytes = c(1183256.73, 2807039.36, 310800.62, 3852.71),
+  resource_length = c(35.38776, 125.63636, 130.41497, 35.35822)
+)
+data_k4</code></pre>
+<pre><code>##     status      bytes resource_length
+## 1 200.0000 1183256.73        35.38776
+## 2 200.0000 2807039.36       125.63636
+## 3 200.0000  310800.62       130.41497
+## 4 227.1378    3852.71        35.35822</code></pre>
+</div>
+<div id="resultados-con-k-5" class="section level3">
+<h3>Resultados con k = 5</h3>
+<pre class="r"><code>data_k5 &lt;- data.frame(
+  status = c(200.000, 200.000, 200.000, 200.000, 228.293),
+  bytes = c(45046.075, 2807039.364, 339385.189, 1183256.735, 2168.504),
+  resource_length = c(75.00356, 125.63636, 129.22951, 35.38776, 33.70423)
+)
+data_k5</code></pre>
+<pre><code>##    status       bytes resource_length
+## 1 200.000   45046.075        75.00356
+## 2 200.000 2807039.364       125.63636
+## 3 200.000  339385.189       129.22951
+## 4 200.000 1183256.735        35.38776
+## 5 228.293    2168.504        33.70423</code></pre>
+</div>
+<div id="análisis-de-los-resultados-con-k-means" class="section level3">
+<h3>Análisis de los resultados con k-means</h3>
+<div id="interpretación-de-los-resultados-con-k-5" class="section level4">
+<h4>Interpretación de los resultados con k = 5</h4>
+<p>El agrupamiento con k = 5 muestra cinco clusters bien
+diferenciados:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Cluster 1:</strong> Representa recursos con longitud media y
+un tamaño de bytes relativamente bajo.</li>
+<li><strong>Cluster 2:</strong> Corresponde a recursos con una longitud
+alta y el mayor tamaño de bytes transferidos.</li>
+<li><strong>Cluster 3:</strong> Incluye recursos con longitud alta, pero
+con menor tamaño de bytes que el Cluster 2.</li>
+<li><strong>Cluster 4:</strong> Agrupa recursos con longitud baja y un
+tamaño de bytes medio.</li>
+<li><strong>Cluster 5:</strong> Representa casos extremos, con códigos
+de estado diferentes (228) y tamaños de bytes muy pequeños.</li>
+</ol>
+</div>
+</div>
+<div id="comparación-entre-los-diferentes-valores-de-k" class="section level3">
+<h3>Comparación entre los diferentes valores de k</h3>
+<p>Los resultados obtenidos para los diferentes valores de k indican
+que:</p>
+<ul>
+<li><strong>k = 2:</strong> Los clusters iniciales separan recursos
+exitosos de aquellos con códigos de estado menos comunes.</li>
+<li><strong>k = 3:</strong> Se identifican diferencias más claras en las
+longitudes de los recursos.</li>
+<li><strong>k = 4:</strong> Surge una mayor separación basada en el
+tamaño de los bytes transferidos.</li>
+<li><strong>k = 5:</strong> Se logra un agrupamiento más detallado,
+incluyendo un cluster que resalta casos atípicos.</li>
+</ul>
+</div>
+<div id="conclusión" class="section level3">
+<h3>Conclusión</h3>
+<p>El valor óptimo de k depende del objetivo del análisis. En este caso,
+k = 5 proporciona un nivel de granularidad suficiente para diferenciar
+recursos por longitud, tamaño y código de estado. Esto puede ser útil
+para detectar patrones de uso o posibles anomalías en el sistema.</p>
+</div>
+</div>
 </div>
 
 
