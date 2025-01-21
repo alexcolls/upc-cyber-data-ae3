@@ -1,0 +1,36 @@
+# Descripción de los Datos
+
+## Fuente de los Datos
+Los datos utilizados en este análisis provienen de un archivo llamado `epa-http.csv`, que representa un log de accesos HTTP de un servidor web. Este tipo de datos es comúnmente utilizado para analizar tráfico web, patrones de uso y detección de anomalías en seguridad.
+
+## Tipología
+Los datos corresponden a un registro detallado de peticiones HTTP realizadas al servidor. Cada línea del archivo representa una solicitud única, con información estructurada en campos que describen aspectos como el cliente que realiza la petición, el recurso solicitado, el método HTTP utilizado, y el resultado de la operación.
+
+## Descripción de los Campos
+A continuación, se describe cada campo presente en los datos:
+
+| **Campo**       | **Descripción**                                                                 |
+|------------------|---------------------------------------------------------------------------------|
+| **host**         | Dirección IP o nombre del cliente que realiza la petición.                     |
+| **timestamp**    | Fecha y hora exacta en que se realizó la petición (formato: `dd/MMM/yyyy:hh:mm:ss`). |
+| **method**       | Método HTTP utilizado (`GET`, `POST`, `HEAD`, etc.).                           |
+| **resource**     | Recurso solicitado por el cliente (por ejemplo, un archivo HTML, imagen, etc.).|
+| **protocol**     | Protocolo HTTP utilizado (`HTTP/1.0`, `HTTP/1.1`).                             |
+| **status**       | Código de estado HTTP devuelto por el servidor (`200`, `404`, `500`, etc.).    |
+| **bytes**        | Cantidad de datos (en bytes) transmitidos en la respuesta del servidor.        |
+
+## Ejemplo de los Datos
+Unas cuantas filas del dataset para ilustrar cómo están estructurados:
+
+| **host**             | **timestamp**         | **method** | **resource**                   | **protocol** | **status** | **bytes** |
+|-----------------------|-----------------------|------------|---------------------------------|--------------|------------|-----------|
+| 141.243.1.172         | 2025-01-29 23:53:25  | GET        | /Software.html                 | HTTP/1.0     | 200        | 1497      |
+| query2.lycos.cs.cmu.edu | 2025-01-29 23:53:36 | GET        | /Consumer.html                 | HTTP/1.0     | 200        | 1325      |
+| tanuki.twics.com      | 2025-01-29 23:53:53  | GET        | /News.html                     | HTTP/1.0     | 200        | 1014      |
+| wpbfl2-45.gate.net    | 2025-01-29 23:54:15  | GET        | /                             | HTTP/1.0     | 200        | 4889      |
+| wpbfl2-45.gate.net    | 2025-01-29 23:54:16  | GET        | /icons/circle_logo_small.gif   | HTTP/1.0     | 200        | 2624      |
+
+## Observaciones
+- **Relevancia de los datos:** Este tipo de información es crucial para entender cómo los usuarios interactúan con un sitio web. Permite identificar patrones de tráfico, detectar errores frecuentes (como recursos no encontrados) y analizar el rendimiento del servidor.
+- **Limitaciones:** Los datos no incluyen información sensible como credenciales de usuario, pero podría haber información identificable en los nombres de host.
+
