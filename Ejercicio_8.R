@@ -83,3 +83,4 @@ for (i in seq_along(k_values)) {
   
   print(p)  # Usar print() explícito dentro del bucle
 }
+x
