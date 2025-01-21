@@ -49,3 +49,4 @@ final_results <- bind_rows(
 
 # Mostrar resultados
 print(final_results)
+
